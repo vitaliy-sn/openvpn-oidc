@@ -1,0 +1,64 @@
+{{ $openvpnNetwork := required "A valid .Values.openvpn.subnet entry required!" .Values.openvpn.subnet }}
+{{ $openvpnNetworkAddress := index (splitList "/" $openvpnNetwork) 0 }}
+{{ $openvpnNetworkNetmask := index (splitList "/" $openvpnNetwork) 1 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configs
+data:
+  server.conf: |-
+    user nobody
+    group nogroup
+
+    mode server
+    tls-server
+    # dev-type tun
+    dev tun
+    proto tcp-server
+    port 1194
+    # local 127.0.0.1
+    management 127.0.0.1 8400
+
+    tun-mtu 1500
+    mssfix
+    # only udp
+    #fragment 1300
+
+    keepalive 10 60
+    client-to-client
+    persist-key
+    persist-tun
+
+    cipher AES-128-CBC
+    duplicate-cn
+
+    server {{ $openvpnNetworkAddress }} {{ $openvpnNetworkNetmask }}
+
+    topology subnet
+    push "topology subnet"
+    push "route-metric 200"
+    #push "dhcp-option DNS 8.8.8.8"
+    #push "dhcp-option DNS 208.67.222.222"
+    #push "dhcp-option DNS 185.121.177.177"
+
+    verb 4
+
+    ifconfig-pool-persist /tmp/openvpn.ipp
+    status /tmp/openvpn.status
+
+    auth-user-pass-verify /openvpn/openvpn-oidc-auth via-file
+    script-security 2
+    verify-client-cert none
+
+    key-direction 0
+    ca /openvpn/certificates-and-keys/ca.crt
+    key /openvpn/certificates-and-keys/server.key
+    cert /openvpn/certificates-and-keys/server.crt
+    dh /openvpn/certificates-and-keys/dh.pem
+    tls-auth /openvpn/certificates-and-keys/ta.key
+  oidc-config.yaml: |
+    debug: false
+    issuerURL: {{ .Values.oidc.issuerURL }}
+    redirectURI: https://callback/callback
+    clientID: dex-client-dexclient:default

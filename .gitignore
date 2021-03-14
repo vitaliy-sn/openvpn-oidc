@@ -1,0 +1,9 @@
+openvpn-oidc-auth
+easyrsa
+examples
+go.sum
+testenv
+testauth
+oidc-config.yaml
+NOTES
+test.ovpn

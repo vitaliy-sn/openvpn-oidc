@@ -1,0 +1,84 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openvpn
+spec:
+  selector:
+    matchLabels:
+      app: openvpn
+  template:
+    metadata:
+      labels:
+        app: openvpn
+    spec:
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: openvpn
+        image: ixdx/openvpn-oidc:latest
+        # imagePullPolicy: Always
+        env:
+        - name: OPENVPN_SUBNET
+          value: {{ .Values.openvpn.subnet }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - NET_ADMIN
+            - NET_RAW
+            - MKNOD
+            - SETGID
+            - SETUID
+            drop:
+            - ALL
+        ports:
+        - name: openvpn-tcp
+          containerPort: 1194
+          protocol: TCP
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: dev-net
+          mountPath: /dev/net
+        - name: dexclient
+          mountPath: /openvpn/oauth2
+          readOnly: true
+        - name: certificates-and-keys
+          mountPath: /openvpn/certificates-and-keys
+          readOnly: true
+        - name: configs
+          mountPath: /openvpn/server.conf
+          subPath: server.conf
+          readOnly: true
+        - name: configs
+          mountPath: /openvpn/oidc-config.yaml
+          subPath: oidc-config.yaml
+          readOnly: true
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: dev-net
+        emptyDir: {}
+      - name: dexclient
+        secret:
+          secretName: dex-client-dexclient
+          items:
+          - key: clientSecret
+            path: clientSecret
+      - name: certificates-and-keys
+        secret:
+          secretName: certificates-and-keys
+          items:
+          - key: ca
+            path: ca.crt
+          - key: cert
+            path: server.crt
+          - key: key
+            path: server.key
+          - key: dh
+            path: dh.pem
+          - key: tls
+            path: ta.key
+      - name: configs
+        configMap:
+          name: configs

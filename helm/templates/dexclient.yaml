@@ -1,0 +1,11 @@
+---
+apiVersion: deckhouse.io/v1alpha1
+kind: DexClient
+metadata:
+  name: dexclient
+spec:
+  redirectURIs:
+  - https://callback/callback
+  allowedGroups:
+  - Everyone
+  - admins

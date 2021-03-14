@@ -1,0 +1,17 @@
+oidc:
+  # Hint: kubectl -n d8-user-authn get ing dex
+  issuerURL: https://dex/ # changeme
+openvpn:
+  subnet: 172.16.200.0/255.255.255.0
+  # Hint: use ./get-easyrsa-end-gen-certs.sh to generate this section
+  secret:
+    ca: |
+      changeme
+    cert: |
+      changeme
+    key: |
+      changeme
+    dh: |
+      changeme
+    tls: |
+      changeme
