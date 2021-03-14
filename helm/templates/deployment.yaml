@@ -12,6 +12,14 @@ spec:
       labels:
         app: openvpn
     spec:
+      {{- if .Values.openvpn.nodeSelector }}
+      nodeSelector:
+      {{- .Values.openvpn.nodeSelector | toYaml | indent 8 | printf "\n%s" }}
+      {{- end }}
+      {{- if .Values.openvpn.tolerations }}
+      tolerations:
+      {{- .Values.openvpn.tolerations | toYaml | indent 8 | printf "\n%s" }}
+      {{- end }}
       terminationGracePeriodSeconds: 0
       containers:
       - name: openvpn
@@ -33,8 +41,11 @@ spec:
             - ALL
         ports:
         - name: openvpn-tcp
-          containerPort: 1194
           protocol: TCP
+          containerPort: 1194
+          {{- if eq .Values.openvpn.inlet "HostPort" }}
+          hostPort: {{ .Values.openvpn.hostPort }}
+          {{- end }}
         volumeMounts:
         - name: tmp
           mountPath: /tmp

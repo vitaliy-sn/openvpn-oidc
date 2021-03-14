@@ -2,6 +2,16 @@ oidc:
   # Hint: kubectl -n d8-user-authn get ing dex
   issuerURL: https://dex/ # changeme
 openvpn:
+  # nodeSelector:
+  #   node-role.kubernetes.io/master: ""
+  # tolerations:
+  # - effect: NoSchedule
+  #   key: node-role.kubernetes.io/master
+  # // LoadBalancer or ExternalIP or HostPort
+  inlet: HostPort
+  # externalIP: 1.2.3.4
+  # externalPort: 1194
+  hostPort: 1194
   subnet: 172.16.200.0/255.255.255.0
   # Hint: use ./get-easyrsa-end-gen-certs.sh to generate this section
   secret:
