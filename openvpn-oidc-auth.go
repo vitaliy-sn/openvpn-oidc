@@ -12,6 +12,7 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/net/html"
 	"golang.org/x/oauth2"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -59,8 +60,10 @@ func init() {
 
 	if config.Debug {
 		logrus.SetLevel(logrus.DebugLevel)
-		file, _ := os.OpenFile("/tmp/openvpn-oidc-auth-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-		logrus.SetOutput(file)
+		if os.Getenv("SHELL") != "/bin/bash" {
+			file, _ := os.OpenFile("/tmp/openvpn-oidc-auth-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+			logrus.SetOutput(file)
+		}
 	}
 }
 
@@ -111,41 +114,58 @@ func main() {
 	var state string
 	redirectURL := oauth2Config.AuthCodeURL(state)
 
-	logrus.Debug("redirectURL:", redirectURL)
+	logrus.Debug("redirectURL: ", redirectURL)
 
 	resp2, err := client.Get(redirectURL)
 	if err != nil {
-		logrus.Debug("failed to get", redirectURL)
+		logrus.Debug("failed to get ", redirectURL)
 		os.Exit(1)
 	}
-	dexAuthLocalURL, _ := resp2.Location()
-	logrus.Debug("dexAuthLocalURL: ", dexAuthLocalURL.String())
 
-	resp3, err := client.PostForm(dexAuthLocalURL.String(), url.Values{"login": {userID}, "password": {userPassword}})
+	var dexAuthLocalURL string
+	switch resp2.StatusCode {
+	case 200:
+		body, err := ioutil.ReadAll(resp2.Body)
+		if err != nil {
+			logrus.Debug(err)
+		}
+		links := parseLinks(string(body))
+		for i := 0; i < len(links); i++ {
+			if strings.Contains(links[i], "/local") {
+				dexAuthLocalURL = fmt.Sprintf("%s://%s%s", resp2.Request.URL.Scheme, resp2.Request.URL.Hostname(), links[i])
+			}
+		}
+	case 302:
+		location, _ := resp2.Location()
+		dexAuthLocalURL = location.String()
+	}
+	logrus.Debug("dexAuthLocalURL: ", dexAuthLocalURL)
+
+	resp3, err := client.PostForm(dexAuthLocalURL, url.Values{"login": {userID}, "password": {userPassword}})
 	if err != nil {
-		logrus.Debug("failed to get", dexAuthLocalURL.String())
+		logrus.Debug("failed to get ", dexAuthLocalURL)
 		os.Exit(1)
 	}
 	dexApprovalURL, _ := resp3.Location()
-	logrus.Debug("dexApprovalURL:", dexApprovalURL.String())
+	logrus.Debug("dexApprovalURL: ", dexApprovalURL.String())
 
 	resp4, err := client.Get(dexApprovalURL.String())
 	if err != nil {
-		logrus.Debug("failed to get", dexApprovalURL.String())
+		logrus.Debug("failed to get ", dexApprovalURL.String())
 		os.Exit(1)
 	}
 	callbackURL, _ := resp4.Location()
-	logrus.Debug("callbackURL:", callbackURL.String())
+	logrus.Debug("callbackURL: ", callbackURL.String())
 
 	code := callbackURL.Query().Get("code")
 	logrus.Debug("code:", code)
 
 	oauth2Token, err := oauth2Config.Exchange(ctx, code)
 	if err != nil {
-		logrus.Debug("failed to get oauth2Token", err)
+		logrus.Debug("failed to get oauth2Token ", err)
 		os.Exit(1)
 	}
-	logrus.Debug("oauth2Token:", oauth2Token)
+	logrus.Debug("oauth2Token: ", oauth2Token)
 
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
@@ -153,7 +173,7 @@ func main() {
 		os.Exit(1)
 	}
 	idToken, _ := idTokenVerifier.Verify(context.Background(), rawIDToken)
-	logrus.Debug("idToken:", idToken)
+	logrus.Debug("idToken: ", idToken)
 
 	var claims struct {
 		Email    string   `json:"email"`
@@ -163,16 +183,41 @@ func main() {
 
 	err = idToken.Claims(&claims)
 	if err != nil {
-		logrus.Debug("error decoding ID token claims:", err)
+		logrus.Debug("error decoding ID token claims: ", err)
 	}
 
-	logrus.Debug("claims.Verified:", claims.Verified)
-	logrus.Debug("claims.Email:", claims.Email)
-	logrus.Debug("claims.Groups:", claims.Groups)
+	logrus.Debug("claims.Verified: ", claims.Verified)
+	logrus.Debug("claims.Email: ", claims.Email)
+	logrus.Debug("claims.Groups: ", claims.Groups)
 
 	if claims.Verified {
 		os.Exit(0)
 	} else {
 		os.Exit(1)
 	}
+}
+
+func parseLinks(page string) []string {
+	doc, err := html.Parse(strings.NewReader(page))
+	if err != nil {
+		logrus.Debug(err)
+	}
+
+	var result []string
+	var f func(*html.Node)
+	f = func(n *html.Node) {
+		if n.Type == html.ElementNode && n.Data == "a" {
+			for _, a := range n.Attr {
+				if a.Key == "href" {
+					result = append(result, a.Val)
+					break
+				}
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			f(c)
+		}
+	}
+	f(doc)
+	return (result)
 }
