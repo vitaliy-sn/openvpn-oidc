@@ -1,4 +1,6 @@
 openvpn-oidc-auth
+auth-server/auth-server
+auth-client/auth-client
 easyrsa
 examples
 go.sum

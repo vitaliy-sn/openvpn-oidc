@@ -5,7 +5,7 @@ metadata:
   name: dexclient
 spec:
   redirectURIs:
-  - https://callback/callback
+  - https://{{ .Values.domain }}/callback
   allowedGroups:
   - Everyone
   - admins

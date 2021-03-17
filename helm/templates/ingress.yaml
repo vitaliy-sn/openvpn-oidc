@@ -1,0 +1,42 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: auth-server
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+spec:
+  tls:
+  - hosts:
+    - {{ .Values.authServer.domain }}
+    secretName: ingress-tls
+  rules:
+  - host: {{ .Values.authServer.domain }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-server
+            port:
+              name: http
+---
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: auth-server
+spec:
+  secretName: ingress-tls
+  dnsNames:
+  - {{ .Values.authServer.domain }}
+  acme:
+    config:
+    - http01:
+        ingressClass: nginx
+      domains:
+      - {{ .Values.authServer.domain }}
+  issuerRef:
+    name: letsencrypt
+    kind: ClusterIssuer
