@@ -22,8 +22,8 @@ DOMAIN=openvpn-auth.example.com
 CLIENT_ID="0-r.apps.googleusercontent.com"
 CLIENT_SECRET="secret"
 ADDITIONAL_SCOPES="email"
-EXTERNAL_HOST=openvpn.example.com
-EXTERNAL_PORT=1194
+OPENVPN_SERVER_HOST=openvpn.example.com
+OPENVPN_SERVER_PORT=1194
 ```
 
 #### Easy install in kubernetes from Helm chart:
