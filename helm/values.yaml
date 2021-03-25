@@ -1,22 +1,29 @@
 authServer:
   domain: https://openvpn-auth.%s/
   # Hint: kubectl -n d8-user-authn get ing dex
-  issuerURL: https://dex/ # changeme
+  issuerURL: https://dex.example.com/ # changeme
 openvpn:
-  # domain or ip for connect to openvpn server
-  externalHost: 1.2.3.4
-  externalPort: 1194
+  subnet: 172.16.200.0/255.255.255.0
   # nodeSelector:
   #   node-role.kubernetes.io/master: ""
   # tolerations:
   # - effect: NoSchedule
   #   key: node-role.kubernetes.io/master
+  #
+  # Domain or ip for connect to OpenVPN server
+  serverHost: 1.2.3.4
+  serverPort: 1194
+  #
   # // LoadBalancer or ExternalIP or HostPort
   inlet: HostPort
+  #
+  # If inlet: ExternalIP
   # externalIP: 1.2.3.4
   # externalPort: 1194
+  #
+  # If inlet: HostPort
   hostPort: 1194
-  subnet: 172.16.200.0/255.255.255.0
+  #
   # Hint: use ./get-easyrsa-end-gen-certs.sh to generate this section
   secret:
     ca: |

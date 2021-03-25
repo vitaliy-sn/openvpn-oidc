@@ -23,7 +23,7 @@ spec:
       terminationGracePeriodSeconds: 0
       containers:
       - name: auth-server
-        image: ixdx/openvpn-auth-server:latest
+        image: ixdx/openvpn-oidc-auth-server:latest
         env:
         - name: DOMAIN
           value: {{ .Values.authServer.domain }}
@@ -31,10 +31,10 @@ spec:
           value: {{ .Values.authServer.issuerURL }}
         - name: CLIENT_ID
           value: dex-client-dexclient:{{ .Release.Namespace }}
-        - name: EXTERNAL_HOST
-          value: {{ .Values.openvpn.externalHost }}
-        - name: EXTERNAL_PORT
-          value: {{ .Values.openvpn.externalPort }}
+        - name: OPENVPN_SERVER_HOST
+          value: {{ .Values.openvpn.serverHost }}
+        - name: OPENVPN_SERVER_PORT
+          value: {{ .Values.openvpn.serverPort }}
         ports:
         - name: auth-server
           protocol: TCP
@@ -47,7 +47,7 @@ spec:
           mountPath: /app/certificates-and-keys
           readOnly: true
       - name: openvpn
-        image: ixdx/openvpn-auth-client:latest
+        image: ixdx/openvpn-oidc:latest
         # imagePullPolicy: Always
         env:
         - name: OPENVPN_SUBNET

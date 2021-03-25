@@ -111,12 +111,12 @@ func grantAccess(login, password string) string {
 
 	var config params
 
-	if os.Getenv("EXTERNAL_HOST") != "" {
-		config.Host = os.Getenv("EXTERNAL_HOST")
+	if os.Getenv("OPENVPN_SERVER_HOST") != "" {
+		config.Host = os.Getenv("OPENVPN_SERVER_HOST")
 	}
 
-	if os.Getenv("EXTERNAL_PORT") != "" {
-		config.Port = os.Getenv("EXTERNAL_PORT")
+	if os.Getenv("OPENVPN_SERVER_PORT") != "" {
+		config.Port = os.Getenv("OPENVPN_SERVER_PORT")
 	}
 
 	ca, err := ioutil.ReadFile("/app/certificates-and-keys/ca.crt")
