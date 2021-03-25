@@ -5,7 +5,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: configs
+  name: config
 data:
   server.conf: |-
     user nobody
@@ -47,7 +47,7 @@ data:
     ifconfig-pool-persist /tmp/openvpn.ipp
     status /tmp/openvpn.status
 
-    auth-user-pass-verify /openvpn/openvpn-oidc-auth via-file
+    auth-user-pass-verify /openvpn/auth-client via-file
     script-security 2
     verify-client-cert none
 
@@ -57,8 +57,3 @@ data:
     cert /openvpn/certificates-and-keys/server.crt
     dh /openvpn/certificates-and-keys/dh.pem
     tls-auth /openvpn/certificates-and-keys/ta.key
-  oidc-config.yaml: |
-    debug: false
-    issuerURL: {{ .Values.oidc.issuerURL }}
-    redirectURI: https://callback/callback
-    clientID: dex-client-dexclient:default

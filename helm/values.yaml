@@ -1,7 +1,11 @@
-oidc:
+authServer:
+  domain: https://openvpn-auth.%s/
   # Hint: kubectl -n d8-user-authn get ing dex
   issuerURL: https://dex/ # changeme
 openvpn:
+  # domain or ip for connect to openvpn server
+  externalHost: 1.2.3.4
+  externalPort: 1194
   # nodeSelector:
   #   node-role.kubernetes.io/master: ""
   # tolerations:

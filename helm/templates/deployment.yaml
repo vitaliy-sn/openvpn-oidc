@@ -22,8 +22,32 @@ spec:
       {{- end }}
       terminationGracePeriodSeconds: 0
       containers:
+      - name: auth-server
+        image: ixdx/openvpn-auth-server:latest
+        env:
+        - name: DOMAIN
+          value: {{ .Values.authServer.domain }}
+        - name: ISSUER_URL
+          value: {{ .Values.authServer.issuerURL }}
+        - name: CLIENT_ID
+          value: dex-client-dexclient:{{ .Release.Namespace }}
+        - name: EXTERNAL_HOST
+          value: {{ .Values.openvpn.externalHost }}
+        - name: EXTERNAL_PORT
+          value: {{ .Values.openvpn.externalPort }}
+        ports:
+        - name: auth-server
+          protocol: TCP
+          containerPort: 9999
+        volumeMounts:
+        - name: dexclient
+          mountPath: /app/oauth2
+          readOnly: true
+        - name: certificates-and-keys
+          mountPath: /app/certificates-and-keys
+          readOnly: true
       - name: openvpn
-        image: ixdx/openvpn-oidc:latest
+        image: ixdx/openvpn-auth-client:latest
         # imagePullPolicy: Always
         env:
         - name: OPENVPN_SUBNET
@@ -51,19 +75,12 @@ spec:
           mountPath: /tmp
         - name: dev-net
           mountPath: /dev/net
-        - name: dexclient
-          mountPath: /openvpn/oauth2
-          readOnly: true
         - name: certificates-and-keys
           mountPath: /openvpn/certificates-and-keys
           readOnly: true
-        - name: configs
+        - name: config
           mountPath: /openvpn/server.conf
           subPath: server.conf
-          readOnly: true
-        - name: configs
-          mountPath: /openvpn/oidc-config.yaml
-          subPath: oidc-config.yaml
           readOnly: true
       volumes:
       - name: tmp
@@ -90,6 +107,6 @@ spec:
             path: dh.pem
           - key: tls
             path: ta.key
-      - name: configs
+      - name: config
         configMap:
-          name: configs
+          name: config
