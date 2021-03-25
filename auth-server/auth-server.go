@@ -25,7 +25,7 @@ type app struct {
 	redirectURI      string
 	clientID         string
 	clientSecret     string
-	additionalScoups []string
+	additionalScopes []string
 	db               map[string]string
 	verifier         *oidc.IDTokenVerifier
 	provider         *oidc.Provider
@@ -57,7 +57,7 @@ func (a *app) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Info(r.RemoteAddr, " ", r.RequestURI)
 	var state string
-	authCodeURL := a.oauth2Config(a.additionalScoups).AuthCodeURL(state)
+	authCodeURL := a.oauth2Config(a.additionalScopes).AuthCodeURL(state)
 	log.Println(authCodeURL)
 	http.Redirect(w, r, authCodeURL, http.StatusSeeOther)
 }
@@ -67,7 +67,7 @@ func (a *app) handleCallback(w http.ResponseWriter, r *http.Request) {
 
 	code := r.URL.Query().Get("code")
 	ctx := oidc.ClientContext(context.Background(), a.client())
-	oauth2Token, err := a.oauth2Config(a.additionalScoups).Exchange(ctx, code)
+	oauth2Token, err := a.oauth2Config(a.additionalScopes).Exchange(ctx, code)
 	if err != nil {
 		log.Debug("failed to get oauth2Token ", err)
 		return
@@ -190,9 +190,9 @@ func main() {
 		a.clientID = os.Getenv("CLIENT_ID")
 	}
 
-	a.additionalScoups = append(a.additionalScoups, []string{"groups", "email"}...)
+	a.additionalScopes = append(a.additionalScopes, []string{"groups", "email"}...)
 	if os.Getenv("ADDITIONAL_SCOPES") != "" {
-		a.additionalScoups = strings.Split(os.Getenv("ADDITIONAL_SCOPES"), " ")
+		a.additionalScopes = strings.Split(os.Getenv("ADDITIONAL_SCOPES"), " ")
 	}
 
 	a.listenHost = "0.0.0.0"
